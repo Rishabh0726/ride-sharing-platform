@@ -1,0 +1,22 @@
+# Git & Version Control
+**/.git
+**/.gitignore
+
+# Build outputs & caches
+**/target
+
+# IDE & Editor metadata
+**/.idea
+**/.vscode
+**/*.iml
+**/*.ipr
+**/*.iws
+
+# Environment secrets & local config
+**/.env
+**/.env.*
+**/docker-compose.override.yml
+
+# Logs & temporary files
+**/*.log
+**/tmp

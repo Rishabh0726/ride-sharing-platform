@@ -1,0 +1,90 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  codec:
+    max-in-memory-size: 2MB
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 2097152
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 3s
+      routes:
+        # User Service Routes (Auth, Profiles, Driver Availability/Discovery)
+        - id: user-service-auth
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service-users
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/users/**
+        - id: user-service-drivers
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/drivers/**
+
+        # Ride Service Routes (Ride Lifecycle State Machine)
+        - id: ride-service
+          uri: ${RIDE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/rides/**
+
+        # Pricing Service Routes (Fare Estimation Quotes)
+        - id: pricing-service
+          uri: ${PRICING_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/pricing/**
+
+        # Notification Service Routes (In-App Notification Inbox)
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/notifications/**
+
+# Actuator Edge Configuration (Public access restricted to health and info)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+# JWT Edge Security Configuration (Externalized; strictly required in production with zero fallback)
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: 86400000
+
+# Edge Chunked Streaming Request Size & Admission Control
+gateway:
+  streaming:
+    max-size-bytes: 2097152
+    max-concurrent-requests: 50
+    max-concurrent-per-ip: 10
+    timeout: 10s
+  rate-limiter:
+    enabled: true
+    max-requests: 20
+    window-seconds: 60
+    max-capacity: 10000
+    trusted-proxies: "${GATEWAY_TRUSTED_PROXIES:127.0.0.1,::1,0:0:0:0:0:0:0:1}"
+
+# OpenAPI / Swagger Documentation (Disabled by default in production)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

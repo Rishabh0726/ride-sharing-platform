@@ -1,0 +1,83 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: api-gateway-test
+  codec:
+    max-in-memory-size: 2MB
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 2097152
+          httpclient:
+            connect-timeout: 5000
+            response-timeout: 10s
+      routes:
+        # User Service routes (Auth, Users, Drivers)
+        - id: user-service-auth
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service-users
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/users/**
+        - id: user-service-drivers
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/drivers/**
+
+        # Ride Service routes (Rides)
+        - id: ride-service
+          uri: ${RIDE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/rides/**
+
+        # Pricing Service routes (Pricing)
+        - id: pricing-service
+          uri: ${PRICING_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/pricing/**
+
+        # Notification Service routes (Notifications)
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/notifications/**
+
+jwt:
+  secret: IsolatedTestingJwtSecretMustBeAtLeast32BytesLongForGatewaySecurity!
+  expiration-ms: 3600000
+
+gateway:
+  rate-limiter:
+    enabled: true
+    max-requests: 20
+    window-seconds: 60
+    max-capacity: 10000
+    trusted-proxies:
+      - 127.0.0.1
+      - ::1
+      - 0:0:0:0:0:0:0:1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
