@@ -80,7 +80,7 @@ public class DriverServiceImpl implements DriverService {
 
         DriverProfile refreshed = driverProfileRepository.findById(profile.getId()).orElseThrow();
         return DriverAvailabilityResponse.builder()
-                .driverId(refreshed.getId())
+                .driverId(authenticatedUserId)
                 .status(refreshed.getStatus().name())
                 .online(refreshed.getStatus() != DriverStatus.OFFLINE)
                 .updatedAt(refreshed.getUpdatedAt())
@@ -131,7 +131,7 @@ public class DriverServiceImpl implements DriverService {
                 .map(d -> {
                     double dist = distanceCalculator.calculateDistance(lat, lon, d.getCurrentLatitude(), d.getCurrentLongitude());
                     return AvailableDriverResponse.builder()
-                            .driverId(d.getId())
+                            .driverId(d.getUser().getId())
                             .vehicleModel(d.getVehicleModel())
                             .licensePlate(d.getLicensePlate())
                             .distanceKm(dist)

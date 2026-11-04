@@ -66,7 +66,7 @@ public interface DriverProfileRepository extends JpaRepository<DriverProfile, Lo
 
     // 4. Candidate Discovery (Standard Bounding Box)
     // Strictly requires d.locationUpdatedAt >= :cutoffTime to enforce GPS freshness
-    @Query("SELECT d FROM DriverProfile d WHERE " +
+    @Query("SELECT d FROM DriverProfile d JOIN FETCH d.user WHERE " +
            "(d.status = com.rideshare.user_service.entity.DriverStatus.AVAILABLE OR " +
            "(d.status = com.rideshare.user_service.entity.DriverStatus.RESERVED AND d.reservationExpiresAt <= :now)) " +
            "AND d.currentLatitude IS NOT NULL AND d.currentLongitude IS NOT NULL " +
@@ -83,7 +83,7 @@ public interface DriverProfileRepository extends JpaRepository<DriverProfile, Lo
     );
 
     // 5. Candidate Discovery (Antimeridian Crossing Bounding Box)
-    @Query("SELECT d FROM DriverProfile d WHERE " +
+    @Query("SELECT d FROM DriverProfile d JOIN FETCH d.user WHERE " +
            "(d.status = com.rideshare.user_service.entity.DriverStatus.AVAILABLE OR " +
            "(d.status = com.rideshare.user_service.entity.DriverStatus.RESERVED AND d.reservationExpiresAt <= :now)) " +
            "AND d.currentLatitude IS NOT NULL AND d.currentLongitude IS NOT NULL " +

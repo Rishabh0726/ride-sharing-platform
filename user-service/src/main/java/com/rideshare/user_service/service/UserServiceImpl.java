@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
         DriverProfile profile = driverProfileRepository.findByUserId(user.getId()).orElse(null);
         if (profile != null) {
             driverResponse = DriverProfileResponse.builder()
-                    .driverId(profile.getId())
+                    .driverId(user.getId())
                     .vehicleModel(profile.getVehicleModel())
                     .licensePlate(profile.getLicensePlate())
                     .status(profile.getStatus().name())

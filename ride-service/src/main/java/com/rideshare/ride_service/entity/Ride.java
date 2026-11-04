@@ -27,6 +27,9 @@ public class Ride {
     @Column(name = "passenger_id", nullable = false)
     private Long passengerId;
 
+    @Column(name = "active_passenger_id", insertable = false, updatable = false)
+    private Long activePassengerId;
+
     @Column(name = "driver_id")
     private Long driverId;
 

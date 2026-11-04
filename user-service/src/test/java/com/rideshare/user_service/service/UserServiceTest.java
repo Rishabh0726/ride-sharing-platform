@@ -98,6 +98,7 @@ class UserServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getDriverProfile()).isNotNull();
+        assertThat(response.getDriverProfile().getDriverId()).isEqualTo(2L);
         assertThat(response.getDriverProfile().getVehicleModel()).isEqualTo("Toyota Camry");
         assertThat(response.getDriverProfile().getLicensePlate()).isEqualTo("KA-01-AB-1234");
     }

@@ -160,5 +160,30 @@ class DriverProfileRepositoryTest {
         );
 
         assertThat(freshCandidates).hasSize(1);
+        assertThat(freshCandidates.get(0).getUser()).isNotNull();
+        assertThat(freshCandidates.get(0).getUser().getId()).isEqualTo(savedProfile.getUser().getId());
+    }
+
+    @Test
+    @DisplayName("Antimeridian candidate discovery fetches associated user without lazy-loading")
+    void shouldFindCandidatesInAntimeridianBoundingBoxAndFetchUser() {
+        LocalDateTime now = LocalDateTime.of(2026, 10, 21, 2, 0, 0);
+        LocalDateTime cutoff = now.minusSeconds(600);
+
+        savedProfile.setLocationUpdatedAt(now.minusSeconds(60));
+        savedProfile.setStatus(DriverStatus.AVAILABLE);
+        savedProfile.setCurrentLatitude(BigDecimal.valueOf(12.9716));
+        savedProfile.setCurrentLongitude(BigDecimal.valueOf(179.5));
+        driverProfileRepository.saveAndFlush(savedProfile);
+
+        List<DriverProfile> candidates = driverProfileRepository.findCandidatesInAntimeridianBoundingBox(
+                now, cutoff,
+                BigDecimal.valueOf(12.0), BigDecimal.valueOf(14.0),
+                BigDecimal.valueOf(170.0), BigDecimal.valueOf(-170.0)
+        );
+
+        assertThat(candidates).hasSize(1);
+        assertThat(candidates.get(0).getUser()).isNotNull();
+        assertThat(candidates.get(0).getUser().getId()).isEqualTo(savedProfile.getUser().getId());
     }
 }

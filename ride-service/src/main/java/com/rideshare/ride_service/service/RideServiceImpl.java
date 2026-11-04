@@ -17,6 +17,7 @@ import feign.FeignException;
 import feign.RetryableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -106,14 +107,26 @@ public class RideServiceImpl implements RideService {
             notificationService.notifyRideRequested(savedRide);
             return mapToRideResponse(savedRide);
         } catch (DataIntegrityViolationException ex) {
-            log.warn("Database uniqueness constraint triggered on quote token: {}", request.getFareQuoteToken());
-            Ride existing = rideRepository.findByFareQuoteToken(request.getFareQuoteToken())
-                    .orElseThrow(() -> new BadRequestException("Failed to create ride: invalid fare quote token"));
-
-            if (existing.getPassengerId().equals(passengerId)) {
-                return mapToRideResponse(existing);
+            // 1. Detect single active ride constraint violation (uq_rides_active_passenger)
+            if (isActiveRideConstraintViolation(ex)) {
+                log.warn("Active ride constraint violation detected for passenger {}: {}", passengerId, ex.getMessage());
+                throw new ConflictException("Passenger already has an active ride in progress");
             }
-            throw new BadRequestException("Invalid fare quote token: quote has already been consumed");
+
+            // 2. Check for duplicate/consumed fare quote token
+            log.warn("Database uniqueness constraint triggered on quote token: {}", request.getFareQuoteToken());
+            Optional<Ride> existing = rideRepository.findByFareQuoteToken(request.getFareQuoteToken());
+            if (existing.isPresent()) {
+                if (existing.get().getPassengerId().equals(passengerId)) {
+                    return mapToRideResponse(existing.get());
+                }
+                throw new BadRequestException("Invalid fare quote token: quote has already been consumed");
+            }
+
+            // 3. Rethrow unrelated data integrity violation to avoid misleading business exception
+            log.error("Unhandled DataIntegrityViolationException during ride creation for passenger {}: {}",
+                    passengerId, ex.getMessage(), ex);
+            throw ex;
         }
     }
 
@@ -470,5 +483,26 @@ public class RideServiceImpl implements RideService {
                 .remarks(event.getRemarks())
                 .createdAt(event.getCreatedAt())
                 .build();
+    }
+
+    private boolean isActiveRideConstraintViolation(DataIntegrityViolationException ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof ConstraintViolationException cve) {
+                String constraintName = cve.getConstraintName();
+                if (constraintName != null && constraintName.toLowerCase().contains("uq_rides_active_passenger")) {
+                    return true;
+                }
+            }
+            String message = current.getMessage();
+            if (message != null) {
+                String lower = message.toLowerCase();
+                if (lower.contains("uq_rides_active_passenger")) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

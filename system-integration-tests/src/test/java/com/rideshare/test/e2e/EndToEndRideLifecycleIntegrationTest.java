@@ -53,43 +53,8 @@ public class EndToEndRideLifecycleIntegrationTest {
 
     @Test
     @Order(1)
-    @DisplayName("Step 1: Register Driver Bob through API Gateway")
-    void testStep1_RegisterDriver() throws Exception {
-        String driverRegisterJson = """
-                {
-                    "email": "driver.bob@rideshare.com",
-                    "password": "SecurePassword123!",
-                    "firstName": "Bob",
-                    "lastName": "Jones",
-                    "phoneNumber": "+919876543201",
-                    "role": "DRIVER",
-                    "vehicleModel": "Honda City",
-                    "licensePlate": "KA-01-AB-1234"
-                }
-                """;
-
-        EntityExchangeResult<byte[]> result = client.post()
-                .uri("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(driverRegisterJson)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectBody()
-                .jsonPath("$.email").isEqualTo("driver.bob@rideshare.com")
-                .jsonPath("$.role").isEqualTo("ROLE_DRIVER")
-                .jsonPath("$.accessToken").isNotEmpty()
-                .returnResult();
-
-        JsonNode root = mapper.readTree(result.getResponseBody());
-        driverToken = root.path("accessToken").asText();
-        driverUserId = root.path("userId").asLong();
-        assertThat(driverUserId).isNotNull();
-    }
-
-    @Test
-    @Order(2)
-    @DisplayName("Step 2: Register Passenger Alice through API Gateway")
-    void testStep2_RegisterPassenger() throws Exception {
+    @DisplayName("Step 1: Register Passenger Alice through API Gateway (deliberately before driver to differentiate user ID from driver profile ID)")
+    void testStep1_RegisterPassenger() throws Exception {
         String passengerRegisterJson = """
                 {
                     "email": "passenger.alice@rideshare.com",
@@ -120,8 +85,45 @@ public class EndToEndRideLifecycleIntegrationTest {
     }
 
     @Test
+    @Order(2)
+    @DisplayName("Step 2: Register Driver Bob through API Gateway (users.id > driver_profiles.id)")
+    void testStep2_RegisterDriver() throws Exception {
+        String driverRegisterJson = """
+                {
+                    "email": "driver.bob@rideshare.com",
+                    "password": "SecurePassword123!",
+                    "firstName": "Bob",
+                    "lastName": "Jones",
+                    "phoneNumber": "+919876543201",
+                    "role": "DRIVER",
+                    "vehicleModel": "Honda City",
+                    "licensePlate": "KA-01-AB-1234"
+                }
+                """;
+
+        EntityExchangeResult<byte[]> result = client.post()
+                .uri("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(driverRegisterJson)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.email").isEqualTo("driver.bob@rideshare.com")
+                .jsonPath("$.role").isEqualTo("ROLE_DRIVER")
+                .jsonPath("$.accessToken").isNotEmpty()
+                .returnResult();
+
+        JsonNode root = mapper.readTree(result.getResponseBody());
+        driverToken = root.path("accessToken").asText();
+        driverUserId = root.path("userId").asLong();
+        assertThat(driverUserId).isNotNull();
+        // Crucial regression invariant: driverUserId must not equal 1 (Alice is 1, Bob is 2)
+        assertThat(driverUserId).isNotEqualTo(passengerUserId);
+    }
+
+    @Test
     @Order(3)
-    @DisplayName("Step 3: Driver Bob toggles availability to ONLINE with coordinates")
+    @DisplayName("Step 3: Driver Bob toggles availability to ONLINE with coordinates (verifies driverId == users.id)")
     void testStep3_DriverToggleAvailability() {
         String availabilityJson = """
                 {
@@ -140,12 +142,13 @@ public class EndToEndRideLifecycleIntegrationTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.status").isEqualTo("AVAILABLE")
-                .jsonPath("$.online").isEqualTo(true);
+                .jsonPath("$.online").isEqualTo(true)
+                .jsonPath("$.driverId").isEqualTo(driverUserId);
     }
 
     @Test
     @Order(4)
-    @DisplayName("Step 4: Passenger Alice discovers available drivers nearby")
+    @DisplayName("Step 4: Passenger Alice discovers available drivers nearby (verifies driverId == users.id)")
     void testStep4_PassengerDiscoverDrivers() {
         client.get()
                 .uri("/api/v1/drivers/available?latitude=12.9716&longitude=77.5946&radiusKm=5.0")
@@ -154,7 +157,8 @@ public class EndToEndRideLifecycleIntegrationTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$[0].vehicleModel").isEqualTo("Honda City")
-                .jsonPath("$[0].licensePlate").isEqualTo("KA-01-AB-1234");
+                .jsonPath("$[0].licensePlate").isEqualTo("KA-01-AB-1234")
+                .jsonPath("$[0].driverId").isEqualTo(driverUserId);
     }
 
     @Test

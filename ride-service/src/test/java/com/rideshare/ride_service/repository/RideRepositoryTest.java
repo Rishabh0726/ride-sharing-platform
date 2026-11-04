@@ -244,18 +244,22 @@ class RideRepositoryTest {
         // 1. Initially empty
         assertThat(rideRepository.findByStatusOrderByCreatedAtDescIdDesc(RideStatus.REQUESTED)).isEmpty();
 
-        // 2. Persist requested rides
+        // 2. Persist requested rides (distinct passengers requesting rides)
         Ride req1 = createSampleRide("quote-feed-1", RideStatus.REQUESTED);
+        req1.setPassengerId(101L);
         Ride savedReq1 = rideRepository.saveAndFlush(req1);
 
         Ride req2 = createSampleRide("quote-feed-2", RideStatus.REQUESTED);
+        req2.setPassengerId(102L);
         Ride savedReq2 = rideRepository.saveAndFlush(req2);
 
         Ride req3 = createSampleRide("quote-feed-3", RideStatus.REQUESTED);
+        req3.setPassengerId(103L);
         Ride savedReq3 = rideRepository.saveAndFlush(req3);
 
         // 3. Persist other statuses that must be excluded
         Ride accepted = createSampleRide("quote-feed-accepted", RideStatus.ACCEPTED);
+        accepted.setPassengerId(104L);
         accepted.setDriverId(202L);
         rideRepository.saveAndFlush(accepted);
 

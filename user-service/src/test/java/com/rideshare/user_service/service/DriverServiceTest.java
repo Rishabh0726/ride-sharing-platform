@@ -7,6 +7,7 @@ import com.rideshare.user_service.dto.request.DriverReservationRequest;
 import com.rideshare.user_service.dto.response.*;
 import com.rideshare.user_service.entity.DriverProfile;
 import com.rideshare.user_service.entity.DriverStatus;
+import com.rideshare.user_service.entity.User;
 import com.rideshare.user_service.exception.BadRequestException;
 import com.rideshare.user_service.exception.ConflictException;
 import com.rideshare.user_service.exception.ResourceNotFoundException;
@@ -58,12 +59,12 @@ class DriverServiceTest {
     @DisplayName("Toggle availability to ONLINE with coordinates transitions OFFLINE driver to AVAILABLE")
     void shouldToggleOnlineSuccessfully() {
         DriverProfile profile = DriverProfile.builder()
-                .id(1L)
+                .id(5L)
                 .status(DriverStatus.OFFLINE)
                 .build();
 
         DriverProfile updatedProfile = DriverProfile.builder()
-                .id(1L)
+                .id(5L)
                 .status(DriverStatus.AVAILABLE)
                 .currentLatitude(BigDecimal.valueOf(12.9716))
                 .currentLongitude(BigDecimal.valueOf(77.5946))
@@ -71,9 +72,9 @@ class DriverServiceTest {
                 .updatedAt(fixedNow)
                 .build();
 
-        when(driverProfileRepository.findByUserId(10L)).thenReturn(Optional.of(profile));
-        when(driverProfileRepository.setDriverAvailable(eq(1L), any(), any(), eq(fixedNow))).thenReturn(1);
-        when(driverProfileRepository.findById(1L)).thenReturn(Optional.of(updatedProfile));
+        when(driverProfileRepository.findByUserId(42L)).thenReturn(Optional.of(profile));
+        when(driverProfileRepository.setDriverAvailable(eq(5L), any(), any(), eq(fixedNow))).thenReturn(1);
+        when(driverProfileRepository.findById(5L)).thenReturn(Optional.of(updatedProfile));
 
         DriverAvailabilityRequest request = DriverAvailabilityRequest.builder()
                 .online(true)
@@ -81,8 +82,9 @@ class DriverServiceTest {
                 .longitude(BigDecimal.valueOf(77.5946))
                 .build();
 
-        DriverAvailabilityResponse response = driverService.toggleAvailability(10L, request);
+        DriverAvailabilityResponse response = driverService.toggleAvailability(42L, request);
 
+        assertThat(response.getDriverId()).isEqualTo(42L);
         assertThat(response.getStatus()).isEqualTo("AVAILABLE");
         assertThat(response.getOnline()).isTrue();
         assertThat(response.getLocationUpdatedAt()).isEqualTo(fixedNow);
@@ -153,6 +155,7 @@ class DriverServiceTest {
 
         DriverAvailabilityResponse response = driverService.toggleAvailability(10L, request);
 
+        assertThat(response.getDriverId()).isEqualTo(10L);
         assertThat(response.getStatus()).isEqualTo("OFFLINE");
         assertThat(response.getOnline()).isFalse();
     }
@@ -186,9 +189,13 @@ class DriverServiceTest {
 
         when(distanceCalculator.calculateBoundingBox(pickupLat, pickupLon, 5.0)).thenReturn(bbox);
 
-        DriverProfile d1 = DriverProfile.builder().id(1L).vehicleModel("Prius").licensePlate("DL-01").currentLatitude(BigDecimal.valueOf(12.98)).currentLongitude(BigDecimal.valueOf(77.60)).ratingAvg(BigDecimal.valueOf(4.9)).build();
-        DriverProfile d2 = DriverProfile.builder().id(2L).vehicleModel("Camry").licensePlate("DL-02").currentLatitude(BigDecimal.valueOf(12.975)).currentLongitude(BigDecimal.valueOf(77.598)).ratingAvg(BigDecimal.valueOf(4.8)).build();
-        DriverProfile d3Far = DriverProfile.builder().id(3L).vehicleModel("Swift").licensePlate("DL-03").currentLatitude(BigDecimal.valueOf(13.01)).currentLongitude(BigDecimal.valueOf(77.63)).ratingAvg(BigDecimal.valueOf(4.7)).build();
+        User u1 = User.builder().id(101L).build();
+        User u2 = User.builder().id(202L).build();
+        User u3Far = User.builder().id(303L).build();
+
+        DriverProfile d1 = DriverProfile.builder().id(1L).user(u1).vehicleModel("Prius").licensePlate("DL-01").currentLatitude(BigDecimal.valueOf(12.98)).currentLongitude(BigDecimal.valueOf(77.60)).ratingAvg(BigDecimal.valueOf(4.9)).build();
+        DriverProfile d2 = DriverProfile.builder().id(2L).user(u2).vehicleModel("Camry").licensePlate("DL-02").currentLatitude(BigDecimal.valueOf(12.975)).currentLongitude(BigDecimal.valueOf(77.598)).ratingAvg(BigDecimal.valueOf(4.8)).build();
+        DriverProfile d3Far = DriverProfile.builder().id(3L).user(u3Far).vehicleModel("Swift").licensePlate("DL-03").currentLatitude(BigDecimal.valueOf(13.01)).currentLongitude(BigDecimal.valueOf(77.63)).ratingAvg(BigDecimal.valueOf(4.7)).build();
 
         when(driverProfileRepository.findCandidatesInStandardBoundingBox(eq(fixedNow), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(d1, d2, d3Far));
@@ -201,9 +208,9 @@ class DriverServiceTest {
 
         // d3Far (5.5 km) must be excluded; d2 (0.5 km) must appear before d1 (1.5 km)
         assertThat(results).hasSize(2);
-        assertThat(results.get(0).getDriverId()).isEqualTo(2L);
+        assertThat(results.get(0).getDriverId()).isEqualTo(202L);
         assertThat(results.get(0).getDistanceKm()).isEqualTo(0.50);
-        assertThat(results.get(1).getDriverId()).isEqualTo(1L);
+        assertThat(results.get(1).getDriverId()).isEqualTo(101L);
         assertThat(results.get(1).getDistanceKm()).isEqualTo(1.50);
     }
 
