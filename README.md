@@ -139,20 +139,20 @@ All automated tests execute against isolated, in-memory H2 databases (`MODE=MySQ
 # Linux / macOS
 ./mvnw test
 ```
-*Current Verified Status: 7 projects, 313 tests, 0 failures, 0 errors, 0 skips.*
+*Current Verified Status: 7 projects, 325 tests, 0 failures, 0 errors, 0 skips.*
 
 ### Run Module-Specific Test Suites
 ```powershell
 # API Gateway resilience, rate limiting, and streaming size tests (76 tests)
 .\mvnw.cmd test -pl api-gateway
 
-# User Service auth, driver availability, lease protocol & health tests (83 tests)
+# User Service auth, driver availability, lease protocol & health tests (84 tests)
 .\mvnw.cmd test -pl user-service
 
 # Pricing Service fare calculation, quotes & health tests (33 tests)
 .\mvnw.cmd test -pl pricing-service
 
-# Ride Service state machine, compensation & health tests (72 tests)
+# Ride Service state machine, compensation & health tests (83 tests)
 .\mvnw.cmd test -pl ride-service
 
 # Notification Service inbox, idempotency & health tests (30 tests)
@@ -196,7 +196,7 @@ Upon service startup, Flyway automatically applies all pending migrations and Hi
 To ensure technical transparency, execution commands are categorized by their verification status:
 
 ### Verified Workflows (Confirmed Working via Automated Tests & Offline Audit)
-- `.\mvnw.cmd test` compiles and passes all **313 unit, slice, and integration tests** across all 7 projects.
+- `.\mvnw.cmd test` compiles and passes all **325 unit, slice, and integration tests** across all 7 projects.
 - In-memory H2 databases run with zero host port 3306 contact (`Get-NetTCPConnection -RemotePort 3306` confirms 0 connections).
 - `system-integration-tests` launches all 5 backend services and the API Gateway on ephemeral ports, successfully verifying the entire 18-step ride lifecycle and security negative tests.
 - Streaming chunked request protection rejects oversized payloads (> 2 MiB) with HTTP 413 and slowloris trickle uploads (> 10s) with HTTP 408 before downstream invocation.

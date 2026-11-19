@@ -17,21 +17,22 @@
 | **Milestone 8 — Phase 1**: Documentation, Config Harmonization & Secret Hardening | Root & Gateway | **COMPLETE** | 279 / 279 Passing (reconciled) | 2026-10-22 |
 | **Milestone 8 — Phase 2A**: Actuator Health Checks & Probes | All 5 Services | **COMPLETE** | 297 / 297 Passing (+18 tests) | 2026-10-22 |
 | **Milestone 8 — Phase 2B**: Containerization (Dockerfiles & Compose) | All 5 Services & Compose | **COMPLETE** | 297 / 297 Passing (baseline preserved) | 2026-10-22 |
+| **Final Integrity & Regression**: Single Active Ride & Driver ID Consistency | System-wide Reactor | **COMPLETE** | 325 / 325 Passing (+28 cumulative) | 2026-11-17 |
 
 ---
 
 ## Test Evidence Reconciliation & Audit Record
 
 ### Historical Test Reports vs. Freshly Verified Tests:
-- **Verified Tests in Repository**: **297 passing tests** across 43 Surefire XML test report files in `*/target/surefire-reports` (0 failures, 0 errors, 0 skips).
-  - `user-service`: 83 tests (+4 actuator health & security tests)
-  - `pricing-service`: 33 tests (+4 actuator health & security tests)
-  - `ride-service`: 56 tests (+5 actuator health & security tests)
-  - `notification-service`: 30 tests (+5 actuator health & security tests)
-  - `api-gateway`: 76 tests (probes enabled, show-details: never)
+- **Verified Tests in Repository**: **325 passing tests** across 45 Surefire XML test report files in `*/target/surefire-reports` (0 failures, 0 errors, 0 skips).
+  - `user-service`: 84 tests
+  - `pricing-service`: 33 tests
+  - `ride-service`: 83 tests
+  - `notification-service`: 30 tests
+  - `api-gateway`: 76 tests
   - `system-integration-tests`: 19 tests
-- **Reconciliation Note**: The milestone tracker originally recorded **259** tests at the close of Milestone 7, **279** after Milestone 8 Phase 1, and now **297** in Phase 2A with the introduction of Spring Boot Actuator health checks (`/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`) and security access-control verification across all downstream services.
-- **Freshly Verified Tests (Phase 2A Audit & Hardening)**: Full reactor run `mvnw.cmd test` passed all 297 tests cleanly across all 7 projects. All tests run exclusively against isolated in-memory H2 databases with zero local MySQL port 3306 contact.
+- **Reconciliation Note**: The milestone tracker originally recorded **259** tests at the close of Milestone 7, **279** after Milestone 8 Phase 1, **297** in Phase 2A with the introduction of Spring Boot Actuator health checks (`/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`), **313** at slice-test baseline, and now **325** following the resolution and test verification of Single Active Ride Per Passenger (Issue 1) and Driver ID Consistency (Issue 2).
+- **Freshly Verified Tests (Full Regression Suite)**: Full reactor run `mvnw.cmd test -pl system-integration-tests -am` passed all 325 tests cleanly across all 7 projects (0 failures, 0 errors, 0 skips). All tests run exclusively against isolated in-memory H2 databases with zero local MySQL port 3306 contact.
 
 ---
 
